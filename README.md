@@ -43,7 +43,7 @@ The model is trained on the COCO dataset. Download instructions:
 ## Training
 To train the model:
 ```bash
-python train.py --data_dir /path/to/coco --batch_size 64 --epochs 15
+python train.py --data_dir /path/to/coco --batch_size 32 --epochs 5
 ```
 
 ## Evaluation
