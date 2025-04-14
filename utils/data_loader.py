@@ -54,7 +54,7 @@ class ColorizationDataset(Dataset):
 
 def get_dataloader(root_dir, batch_size=32, num_workers=4):
     transform = transforms.Compose([
-        transforms.Resize((299, 299)),  # Changed back to 299x299 for Inception
+        transforms.Resize((299, 299)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor()
     ])
@@ -62,9 +62,23 @@ def get_dataloader(root_dir, batch_size=32, num_workers=4):
     train_dataset = ColorizationDataset(root_dir, transform, split='train')
     val_dataset = ColorizationDataset(root_dir, transform, split='val')
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size,
-                            shuffle=True, num_workers=num_workers, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size,
-                          shuffle=False, num_workers=num_workers, pin_memory=True)
+    # Optimize for MPS
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=True if num_workers > 0 else False
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=True if num_workers > 0 else False
+    )
     
     return train_loader, val_loader 

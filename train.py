@@ -13,31 +13,34 @@ from utils.metrics import evaluate_batch
 
 def train(args):
     # Set device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
+    print(f"Using device: {device}")
     
     # Create models
     generator = Generator().to(device)
     discriminator = Discriminator().to(device)
     
-    # Create optimizers
-    g_optimizer = optim.Adam(generator.parameters(), lr=2e-4, betas=(0.5, 0.999))
-    d_optimizer = optim.Adam(discriminator.parameters(), lr=2e-4, betas=(0.5, 0.999))
+    # Optimizers
+    g_optimizer = optim.Adam(generator.parameters(), lr=0.0002, betas=(0.5, 0.999))
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
     
     # Loss functions
-    criterion_gan = nn.BCEWithLogitsLoss()
-    criterion_l1 = nn.L1Loss()
+    criterion_gan = nn.BCEWithLogitsLoss().to(device)
+    criterion_l1 = nn.L1Loss().to(device)
     
     # Get data loaders
-    train_loader, val_loader = get_dataloader(args.data_dir, args.batch_size)
+    train_loader, val_loader = get_dataloader(args.data_dir, batch_size=args.batch_size)
     
     # Tensorboard writer
     writer = SummaryWriter()
     
     # Training loop
     for epoch in range(args.epochs):
-        # Training
         generator.train()
         discriminator.train()
+        
+        # Enable MPS memory efficient mode
+        torch.mps.set_per_process_memory_fraction(0.7)
         
         train_g_loss = 0
         train_d_loss = 0
@@ -45,9 +48,9 @@ def train(args):
         train_ssim = 0
         
         for i, (L, ab) in enumerate(tqdm(train_loader)):
+            batch_size = L.size(0)
             L = L.to(device)
             ab = ab.to(device)
-            batch_size = L.size(0)
             
             # Train discriminator
             d_optimizer.zero_grad()
